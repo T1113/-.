@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="贪吃蛇">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>贪吃蛇游戏</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 主菜单 -->
+    <div id="mainMenu" class="screen active">
+        <div class="menu-container">
+            <div class="game-title">🐍 成语贪吃蛇</div>
+            <div class="game-subtitle">在游戏中学习传统文化，感受成语之美</div>
+            <div class="menu-buttons">
+                <button class="menu-btn primary-btn" onclick="showScreen('gameScreen')">🎮 开始游戏</button>
+                <button class="menu-btn" onclick="showScreen('idiomsLibraryScreen')">📚 解锁成语</button>
+                <button class="menu-btn" onclick="showScreen('settingsScreen')">⚙️ 游戏设置</button>
+                <button class="menu-btn" onclick="showScreen('helpScreen')">❓ 游戏帮助</button>
+                <button class="menu-btn" onclick="showScreen('aboutScreen')">ℹ️ 关于游戏</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div id="gameScreen" class="screen">
+        <div class="game-header">
+            <button class="back-btn" onclick="showScreen('mainMenu')">← 返回</button>
+            <div class="game-info">
+                <div class="score">得分: <span id="score">0</span></div>
+                <div class="high-score">最高: <span id="high-score">0</span></div>
+            </div>
+            <button id="pauseBtn" class="pause-btn" onclick="if(game) game.togglePause()">暂停</button>
+        </div>
+        
+        <!-- 成语显示区域 -->
+        <div class="idiom-display">
+            <div class="current-idiom">
+                <div class="idiom-title">当前成语：</div>
+                <div class="idiom-chars" id="idiomChars">
+                    <span class="char-box">事</span>
+                    <span class="char-box">事</span>
+                    <span class="char-box">如</span>
+                    <span class="char-box missing">?</span>
+                </div>
+                <div class="idiom-hint" id="idiomHint">每件事情都符合心意</div>
+            </div>
+        </div>
+        
+        <div class="game-container">
+            <div class="game-area">
+                <button id="startBtn" class="start-btn" onclick="if(game) game.startGame()">开始游戏</button>
+                <canvas id="gameCanvas" width="400" height="400"></canvas>
+            </div>
+            
+            <!-- 已完成成语列表 -->
+            <div class="completed-idioms">
+                <div class="completed-title">已学成语</div>
+                <div class="completed-list" id="completedList">
+                    <!-- 动态生成已完成的成语 -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="control-row">
+                <button class="control-btn" id="upBtn">↑</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" id="leftBtn">←</button>
+                <button class="control-btn" id="downBtn">↓</button>
+                <button class="control-btn" id="rightBtn">→</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 暂停菜单 -->
+    <div id="pauseMenu" class="overlay">
+        <div class="pause-container">
+            <h2>游戏暂停</h2>
+            <div class="pause-buttons">
+                <button class="menu-btn primary" onclick="resumeGame()">▶️ 继续游戏</button>
+                <button class="menu-btn" onclick="restartGame()">🔄 重新开始</button>
+                <button class="menu-btn" onclick="showScreen('settingsScreen')">⚙️ 设置</button>
+                <button class="menu-btn" onclick="exitToMenu()">🏠 返回主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置界面 -->
+    <div id="settingsScreen" class="screen">
+        <div class="settings-container">
+            <div class="screen-header">
+                <button class="back-btn" onclick="showScreen('mainMenu')">← 返回</button>
+                <h2>游戏设置</h2>
+            </div>
+            <div class="settings-content">
+                <div class="setting-group">
+                    <label>难度等级</label>
+                    <select id="difficulty" class="setting-select">
+                        <option value="easy">🟢 简单</option>
+                        <option value="medium" selected>🟡 中等</option>
+                        <option value="hard">🟠 困难</option>
+                        <option value="extreme">🔴 极限</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>游戏尺寸</label>
+                    <select id="gameSize" class="setting-select">
+                        <option value="small">小 (300x300)</option>
+                        <option value="medium" selected>中 (400x400)</option>
+                        <option value="large">大 (500x500)</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>音效</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="soundToggle" checked>
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>震动反馈</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="vibrationToggle" checked>
+                        <span class="slider"></span>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>游戏主题</label>
+                    <select id="gameTheme" class="setting-select">
+                        <option value="classic" selected>经典</option>
+                        <option value="neon">霓虹</option>
+                        <option value="retro">复古</option>
+                        <option value="nature">自然</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 解锁成语界面 -->
+    <div id="idiomsLibraryScreen" class="screen">
+        <div class="idioms-library-container">
+            <div class="screen-header">
+                <button class="back-btn" onclick="showScreen('mainMenu')">← 返回</button>
+                <h2>📚 解锁成语</h2>
+            </div>
+            <div class="library-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="unlockedCount">0</div>
+                        <div class="stat-label">已解锁</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📖</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="totalIdiomsCount">150</div>
+                        <div class="stat-label">总成语</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="progressPercentage">0%</div>
+                        <div class="stat-label">完成度</div>
+                    </div>
+                </div>
+            </div>
+            <div class="difficulty-tabs">
+                <button class="difficulty-tab active" data-difficulty="all" onclick="filterIdiomsByDifficulty('all')">全部</button>
+                <button class="difficulty-tab" data-difficulty="easy" onclick="filterIdiomsByDifficulty('easy')">初级</button>
+                <button class="difficulty-tab" data-difficulty="medium" onclick="filterIdiomsByDifficulty('medium')">中级</button>
+                <button class="difficulty-tab" data-difficulty="hard" onclick="filterIdiomsByDifficulty('hard')">高级</button>
+            </div>
+            <div class="idioms-grid" id="idiomsGrid">
+                <!-- 成语卡片将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 帮助界面 -->
+    <div id="helpScreen" class="screen">
+        <div class="help-container">
+            <div class="screen-header">
+                <button class="back-btn" onclick="showScreen('mainMenu')">← 返回</button>
+                <h2>游戏帮助</h2>
+            </div>
+            <div class="help-content">
+                <div class="help-section">
+                    <h3>🎮 基本操作</h3>
+                    <ul>
+                        <li><strong>方向键</strong> - 控制蛇的移动方向</li>
+                        <li><strong>空格键</strong> - 暂停/继续游戏</li>
+                        <li><strong>ESC键</strong> - 返回主菜单</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3>📚 成语游戏逻辑</h3>
+                    <ul>
+                        <li><strong>成语拼图</strong> - 游戏中会随机出现成语字符作为食物</li>
+                        <li><strong>收集字符</strong> - 按正确顺序收集成语的每个字符</li>
+                        <li><strong>完成成语</strong> - 收集完整成语后会显示其含义和拼音</li>
+                        <li><strong>解锁成语</strong> - 完成的成语会被添加到成语库中</li>
+                        <li><strong>难度等级</strong> - 成语分为初级、中级、高级三个难度</li>
+                    </ul>
+                </div>
+                <div class="help-section">
+                    <h3>⭐ 学习技巧</h3>
+                    <ul>
+                        <li>仔细观察成语提示，理解字符顺序</li>
+                        <li>完成成语后认真阅读含义和典故</li>
+                        <li>在成语库中回顾已学习的成语</li>
+                        <li>挑战不同难度的成语，提升文化素养</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 关于界面 -->
+    <div id="aboutScreen" class="screen">
+        <div class="about-container">
+            <div class="screen-header">
+                <button class="back-btn" onclick="showScreen('mainMenu')">← 返回</button>
+                <h2>关于游戏</h2>
+            </div>
+            <div class="about-content">
+                <div class="game-info">
+                    <h3>🐍 成语贪吃蛇</h3>
+                    <p>版本: 2.0</p>
+                </div>
+                <div class="design-purpose">
+                    <h3>🎯 设计初衷</h3>
+                    <p>设计这个游戏的初衷希望大家可以通过游戏的趣味性学习到传统的文化。</p>
+                    <p>我们相信，寓教于乐是最好的学习方式。通过贪吃蛇这个经典游戏，让玩家在轻松愉快的氛围中接触和学习中华传统成语，感受汉语言文字的魅力。</p>
+                </div>
+                <div class="educational-value">
+                    <h3>📚 教育价值</h3>
+                    <ul>
+                        <li>🎓 学习传统成语，提升文化素养</li>
+                        <li>📖 了解成语典故，增长历史知识</li>
+                        <li>🧠 锻炼记忆能力，提高语言表达</li>
+                        <li>🎮 寓教于乐，让学习变得有趣</li>
+                        <li>🏆 成就系统激励，培养学习兴趣</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏结束界面 -->
+    <div id="gameOverScreen" class="overlay">
+        <div class="game-over-container">
+            <div class="achievement-header">
+                <div class="achievement-icon">🎓</div>
+                <h2>学习成果</h2>
+                <p class="achievement-subtitle">恭喜你在这次游戏中学到了新的成语！</p>
+            </div>
+            
+            <div class="learned-idioms-section">
+                <h3>📚 本次解锁的成语</h3>
+                <div id="learnedIdiomsList" class="learned-idioms-list">
+                    <!-- 动态生成学到的成语 -->
+                </div>
+                <div class="learning-summary">
+                    <div class="summary-item">
+                        <span class="summary-icon">🏆</span>
+                        <span class="summary-text">共学习了 <span id="totalLearnedCount" class="highlight-number">0</span> 个成语</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-icon">⭐</span>
+                        <span class="summary-text">获得了 <span id="finalScore" class="highlight-number">0</span> 学习积分</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="encouragement-section">
+                <div class="encouragement-message" id="encouragementMessage">
+                    继续努力，学习更多成语知识！
+                </div>
+            </div>
+            
+            <div class="game-over-buttons">
+                <button id="playAgainBtn" class="menu-btn primary">🔄 继续学习</button>
+                <button id="backToMenuBtn" class="menu-btn">🏠 返回主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成语详情弹窗 -->
+    <div id="idiomModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalIdiomTitle">成语标题</h3>
+                <button class="close-btn" onclick="closeIdiomModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="idiom-details">
+                    <div class="detail-section">
+                        <h4>📖 拼音</h4>
+                        <p id="modalIdiomPinyin">拼音内容</p>
+                    </div>
+                    <div class="detail-section">
+                        <h4>💡 含义</h4>
+                        <p id="modalIdiomMeaning">含义内容</p>
+                    </div>
+                    <div class="detail-section">
+                        <h4>📚 典故</h4>
+                        <p id="modalIdiomStory">典故内容</p>
+                    </div>
+                    <div class="detail-section">
+                        <h4>🎯 难度</h4>
+                        <span id="modalIdiomDifficulty" class="difficulty-badge">难度等级</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="idioms.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
